@@ -41,5 +41,4 @@ GET /?page=../../../../../../database.sqlite HTTP/1.1
 send
 On line 133 we can see the flag:
 
-The flag is TBTL{4Typ1c41_d4T4B453_u54g3}
-
+TBTL{4Typ1c41_d4T4B453_u54g3}
