@@ -1,3 +1,5 @@
+Write-up of Unserburger
+
 During our exploration, we noticed that the URLs for accessing different pages hint at a Local File Inclusion (LFI) vulnerability. By conducting tests, we confirmed our suspicion
 
 $ curl -s "http://__URL__/?page=php://filter/convert.base64-encode/resource=home"
