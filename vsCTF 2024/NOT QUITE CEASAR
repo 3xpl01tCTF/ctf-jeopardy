@@ -1,0 +1,44 @@
+NOT QUITE CEASAR
+
+```py
+mport random
+
+random.seed(1337)
+
+ops = [
+    lambda x: x + 3,
+    lambda x: x - 3,
+    lambda x: x * 3,
+    lambda x: x ^ 3,
+]
+
+encrypted_values = [
+    354, 112, 297, 119, 306, 369, 111, 108, 333, 110, 112, 92, 111, 315, 104,
+    102, 285, 102, 303, 100, 112, 94, 111, 285, 97, 351, 113, 98, 108, 118,
+    109, 119, 98, 94, 51, 56, 159, 50, 53, 153, 100, 144, 98, 51, 53, 303,
+    99, 52, 49, 128
+]
+
+applied_ops = [random.choice(ops) for _ in encrypted_values]
+
+def invert_op(op, val):
+    if op == ops[0]:
+        return val - 3
+    elif op == ops[1]:
+        return val + 3
+    elif op == ops[2]:
+        return val // 3
+    elif op == ops[3]:
+        return val ^ 3
+
+flag = []
+for val, op in zip(encrypted_values, applied_ops):
+    original_value = invert_op(op, val)
+    flag.append(original_value)
+
+flag_str = ''.join(map(chr, flag))
+
+print("Flag:", flag_str)
+
+# Flag: vsctf{looks_like_ceasar_but_isnt_a655563a0a62ef74}
+```
